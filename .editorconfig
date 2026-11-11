@@ -75,3 +75,5 @@ dotnet_diagnostic.xUnit1051.severity = suggestion
 dotnet_diagnostic.CA1707.severity = none
 # Tests may intentionally pass literal strings / unused results.
 dotnet_diagnostic.CA1515.severity = none
+# Test helpers are written as instance members for readable call sites (world.Ticket(...)).
+dotnet_diagnostic.CA1822.severity = none

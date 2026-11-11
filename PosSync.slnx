@@ -3,4 +3,7 @@
     <Project Path="src/PosSync.Core/PosSync.Core.csproj" />
     <Project Path="src/PosSync.Device/PosSync.Device.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PosSync.UnitTests/PosSync.UnitTests.csproj" />
+  </Folder>
 </Solution>
