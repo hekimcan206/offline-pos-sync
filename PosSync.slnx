@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PosSync.Core/PosSync.Core.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>PosSync.Core</RootNamespace>
+    <Description>Hybrid logical clocks, the change model and the deterministic merge policies shared by device and server.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PosSync.UnitTests" />
+  </ItemGroup>
+
+</Project>
