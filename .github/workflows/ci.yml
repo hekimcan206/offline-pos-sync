@@ -1,0 +1,162 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  build-test:
+    name: build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore
+
+      # Package versions are pinned and updated by hand, so a known vulnerability in any direct or
+      # transitive package fails the build. Fix it with a pinned upgrade in Directory.Packages.props.
+      - name: Audit for vulnerable packages
+        run: |
+          set -o pipefail
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerable-packages.txt
+          if grep -q "has the following vulnerable packages" vulnerable-packages.txt; then
+            echo "::error::Known-vulnerable NuGet packages found (see the list above)"
+            exit 1
+          fi
+
+      - name: Format check
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Build (warnings are errors)
+        run: dotnet build --no-restore --configuration Release
+
+      # Unit + property tests, then integration tests: PostgreSQL and Toxiproxy start through Testcontainers on the
+      # runner's Docker engine, and the server runs on Kestrel behind Toxiproxy (host-port tunnel).
+      # No --coverage-output: each test project then writes a uniquely named file instead of overwriting one.
+      - name: Test
+        run: >
+          dotnet test --no-build --configuration Release
+          --coverage --coverage-output-format cobertura
+          --results-directory "${{ github.workspace }}/TestResults"
+
+      - name: Coverage summary
+        if: always()
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.12
+        with:
+          reports: TestResults/**/*.cobertura.xml
+          targetdir: coverage
+          reporttypes: MarkdownSummaryGithub
+          assemblyfilters: "-*Tests*;-PosSync.Benchmarks;-PosSync.Simulator"
+          filefilters: "-*/obj/*"
+
+      - name: Publish coverage to job summary
+        if: always()
+        run: |
+          if [ -f coverage/SummaryGithub.md ]; then
+            cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No coverage report produced."
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-results
+          path: TestResults/
+          retention-days: 7
+
+  container:
+    name: container images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build server image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: offline-pos-sync-server:ci
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,mode=max,scope=server
+
+      - name: Build simulator image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: samples/PosSync.Simulator/Dockerfile
+          push: false
+          load: true
+          tags: offline-pos-sync-simulator:ci
+          cache-from: type=gha,scope=simulator
+          cache-to: type=gha,mode=max,scope=simulator
+
+      - name: Verify both images run as non-root
+        run: |
+          for image in offline-pos-sync-server:ci offline-pos-sync-simulator:ci; do
+            user=$(docker image inspect "$image" --format '{{.Config.User}}')
+            echo "$image user: ${user}"
+            test -n "${user}" && test "${user}" != "0" && test "${user}" != "root"
+          done
+
+  compose-demo:
+    name: docker compose demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # The README promises `docker compose up` runs the whole demo with zero manual steps; this job keeps it true.
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      - name: The simulator sells through a partition and exits 0
+        run: |
+          code=$(docker wait offline-pos-sync-simulator-1)
+          docker compose logs --no-log-prefix simulator | tee simulator.log
+          test "${code}" = "0"
+          grep -q '"converged":true' simulator.log
+          grep -q '"lost":0' simulator.log
+          grep -q '"failures":\[\]' simulator.log
+          grep -q '"kebabQty":3' simulator.log
+
+      - name: The server converged state is readable and the seed is idempotent
+        run: |
+          curl -fsS -H "X-Admin-Key: admin-dev-only" http://127.0.0.1:58280/api/v1/admin/stores/store-001/state | tee state.json
+          grep -q '"hash"' state.json
+          docker compose run --rm seed 2>&1 | tee seed-again.log
+          grep -q "menu seed skipped" seed-again.log
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
