@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>PosSync.Chaos</RootNamespace>
+    <Description>Minimal Toxiproxy REST client used by the partition tests, the simulator and the benchmarks.</Description>
+  </PropertyGroup>
+
+</Project>

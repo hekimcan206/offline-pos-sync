@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PosSync.Server\PosSync.Server.csproj" />
+    <ProjectReference Include="..\..\src\PosSync.Device\PosSync.Device.csproj" />
+    <ProjectReference Include="..\..\src\PosSync.Chaos\PosSync.Chaos.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The tests run the exact init script docker compose uses, so the least-privilege setup is tested, not assumed. -->
+    <None Include="..\..\deploy\postgres\init\*.sh" Link="postgres-init\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test classes run one after another: the machine and CI runners are shared, and partition tests measure timing.
+         The concurrency under test happens inside each test. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="AwesomeAssertions" />
+  </ItemGroup>
+
+</Project>
