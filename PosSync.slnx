@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PosSync.Core/PosSync.Core.csproj" />
+    <Project Path="src/PosSync.Device/PosSync.Device.csproj" />
   </Folder>
 </Solution>

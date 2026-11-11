@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>PosSync.Device</RootNamespace>
+    <Description>The terminal side: SQLite store with a transactional outbox, the sync client and a small POS facade.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PosSync.Core\PosSync.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PosSync.UnitTests" />
+    <InternalsVisibleTo Include="PosSync.IntegrationTests" />
+  </ItemGroup>
+
+</Project>
