@@ -1,0 +1,121 @@
+# `docker compose up` runs the whole demo with zero manual steps:
+#   postgres   → initialised with least-privilege roles (deploy/postgres/init)
+#   migrator   → server image, `--migrate-only`, connects as the schema owner, exits
+#   seed       → server image, `--seed-demo`, writes synthetic menus for store-001 and store-002, exits (idempotent)
+#   server     → the sync server, connects as the application role
+#   toxiproxy  → sits between every terminal and the server; the simulator uses it to cut and flap the link
+#   simulator  → four terminals (three in store-001, one in store-002) sell through online → partition → flapping,
+#                then the link heals; it prints convergence time and the conflict outcomes, exits 0 only on success
+# Optional: `docker compose --profile observability up` adds the Aspire dashboard as an OTLP backend
+# (set OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889, see .env.example).
+name: offline-pos-sync
+
+x-server-image: &server-image
+  image: offline-pos-sync-server:local
+  build:
+    context: .
+    dockerfile: Dockerfile
+
+x-app-connection: &app-connection
+  ConnectionStrings__Default: Host=postgres;Database=possync;Username=sync_app;Password=${APP_PASSWORD:-app-dev-only};Timeout=5
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: possync
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres-dev-only}
+      MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD:-migrator-dev-only}
+      APP_PASSWORD: ${APP_PASSWORD:-app-dev-only}
+    ports:
+      # Loopback only: lets `dotnet run` (appsettings.Development.json) and psql use this database.
+      - "127.0.0.1:${POSTGRES_PORT:-58632}:5432"
+    volumes:
+      - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d possync"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrator:
+    <<: *server-image
+    command: ["--migrate-only"]
+    environment:
+      ConnectionStrings__Default: Host=postgres;Database=possync;Username=sync_migrator;Password=${MIGRATOR_PASSWORD:-migrator-dev-only}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  seed:
+    <<: *server-image
+    command: ["--seed-demo"]
+    environment:
+      <<: *app-connection
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    restart: "no"
+
+  server:
+    <<: *server-image
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-58280}:8080"
+    environment:
+      <<: *app-connection
+      Sync__AdminKey: ${ADMIN_KEY:-admin-dev-only}
+      OpenApi__Enabled: "true"
+      OTEL_SERVICE_NAME: possync-server
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    # No container HEALTHCHECK: the chiseled image has no shell or curl. Probe /health/live and /health/ready over HTTP.
+    restart: unless-stopped
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.12.0
+    ports:
+      # Loopback only: the admin API can cut the network, it must never be reachable from outside this machine.
+      - "127.0.0.1:58474:8474"
+      - "127.0.0.1:58666:8666"
+    restart: unless-stopped
+
+  simulator:
+    image: offline-pos-sync-simulator:local
+    build:
+      context: .
+      dockerfile: samples/PosSync.Simulator/Dockerfile
+    environment:
+      ADMIN_URL: http://server:8080/
+      ADMIN_KEY: ${ADMIN_KEY:-admin-dev-only}
+      TOXIPROXY_URL: http://toxiproxy:8474/
+      UPLINK_URL: http://toxiproxy:8666/
+      PROXY_UPSTREAM: server:8080
+      ONLINE_SECONDS: ${ONLINE_SECONDS:-6}
+      PARTITION_SECONDS: ${PARTITION_SECONDS:-10}
+      FLAP_SECONDS: ${FLAP_SECONDS:-4}
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      server:
+        condition: service_started
+      toxiproxy:
+        condition: service_started
+    restart: "no"
+
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.6
+    profiles: ["observability"]
+    environment:
+      # Local-only convenience; never expose an unsecured dashboard beyond localhost.
+      DASHBOARD__FRONTEND__AUTHMODE: Unsecured
+      DASHBOARD__OTLP__AUTHMODE: Unsecured
+    ports:
+      - "127.0.0.1:58288:18888"
+
+volumes:
+  pgdata:

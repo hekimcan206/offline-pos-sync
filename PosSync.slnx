@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/PosSync.Simulator/PosSync.Simulator.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/PosSync.Chaos/PosSync.Chaos.csproj" />
     <Project Path="src/PosSync.Core/PosSync.Core.csproj" />

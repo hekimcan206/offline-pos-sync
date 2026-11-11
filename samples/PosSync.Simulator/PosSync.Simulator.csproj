@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PosSync.Simulator</RootNamespace>
+    <Description>Console demo: several restaurant terminals keep selling through a network partition and converge after it heals.</Description>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PosSync.Device\PosSync.Device.csproj" />
+    <ProjectReference Include="..\..\src\PosSync.Chaos\PosSync.Chaos.csproj" />
+  </ItemGroup>
+
+</Project>
