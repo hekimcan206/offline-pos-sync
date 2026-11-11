@@ -1,0 +1,18 @@
+{
+  "scenario": "latency",
+  "measuredAt": "2026-11-11T12:32:44.6254312+00:00",
+  "environment": "Microsoft Windows 10.0.26200; X64; 16 logical CPUs; .NET 10.0.12; host load: 5 running containers",
+  "runs": 5,
+  "result": {
+    "single": {
+      "p50": 1.2801,
+      "p95": 1.9507,
+      "p99": 2.7674
+    },
+    "ticket": {
+      "p50": 6.4672,
+      "p95": 11.634,
+      "p99": 17.7907
+    }
+  }
+}

@@ -1,0 +1,10 @@
+environment: Microsoft Windows 10.0.26200; X64; 16 logical CPUs; .NET 10.0.12; host load: 5 running containers
+
+## convergence
+| backlog per terminal | after heal | median ms | min ms | max ms |
+|---|---|---:|---:|---:|
+| 20 tickets (100 changes), 3 terminals | next backoff retry (cap 2 s) | 1527 | 1181 | 1745 |
+| 200 tickets (1000 changes), 3 terminals | next backoff retry (cap 2 s) | 1492 | 722 | 1865 |
+| 20 tickets (100 changes), 3 terminals | retry kicked on reconnect | 314 | 313 | 349 |
+| 200 tickets (1000 changes), 3 terminals | retry kicked on reconnect | 493 | 458 | 554 |
+EXIT 0

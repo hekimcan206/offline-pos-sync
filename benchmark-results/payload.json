@@ -1,0 +1,52 @@
+{
+  "scenario": "payload",
+  "measuredAt": "2026-11-11T12:32:40.6873435+00:00",
+  "environment": "Microsoft Windows 10.0.26200; X64; 16 logical CPUs; .NET 10.0.12; host load: 5 running containers",
+  "runs": 5,
+  "result": {
+    "perBatch": [
+      {
+        "batch": 1,
+        "raw": 421,
+        "gzipFastest": 316,
+        "gzipOptimal": 263
+      },
+      {
+        "batch": 10,
+        "raw": 346.3,
+        "gzipFastest": 116.3,
+        "gzipOptimal": 81.8
+      },
+      {
+        "batch": 100,
+        "raw": 342.53,
+        "gzipFastest": 77.07,
+        "gzipOptimal": 47.78
+      },
+      {
+        "batch": 500,
+        "raw": 342.206,
+        "gzipFastest": 73.134,
+        "gzipOptimal": 44.838
+      }
+    ],
+    "perChange": [
+      {
+        "kind": "ticket:table_no\u002Bguest_count\u002Bopened_by\u002Bstatus\u002Bvoid_requested",
+        "bytes": 378
+      },
+      {
+        "kind": "ticket_line:ticket_id\u002Bsku\u002Bname\u002Bunit_price_minor\u002Bqty\u002Bvoided",
+        "bytes": 447
+      },
+      {
+        "kind": "ticket_line:qty",
+        "bytes": 216
+      },
+      {
+        "kind": "ticket:status",
+        "bytes": 217
+      }
+    ]
+  }
+}

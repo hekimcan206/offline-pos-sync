@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/PosSync.Benchmarks/PosSync.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/PosSync.Simulator/PosSync.Simulator.csproj" />
   </Folder>

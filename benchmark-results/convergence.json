@@ -1,0 +1,52 @@
+{
+  "scenario": "convergence",
+  "measuredAt": "2026-11-11T12:38:50.152591+00:00",
+  "environment": "Microsoft Windows 10.0.26200; X64; 16 logical CPUs; .NET 10.0.12; host load: 5 running containers",
+  "runs": 5,
+  "result": [
+    {
+      "backlog": "20 tickets (100 changes), 3 terminals",
+      "mode": "next backoff retry (cap 2 s)",
+      "samples": [
+        1745.0475,
+        1527.3533,
+        1408.8607,
+        1726.456,
+        1181.12
+      ]
+    },
+    {
+      "backlog": "200 tickets (1000 changes), 3 terminals",
+      "mode": "next backoff retry (cap 2 s)",
+      "samples": [
+        1264.6611,
+        1864.605,
+        721.7097,
+        1491.8899,
+        1632.2921
+      ]
+    },
+    {
+      "backlog": "20 tickets (100 changes), 3 terminals",
+      "mode": "retry kicked on reconnect",
+      "samples": [
+        315.1389,
+        313.527,
+        348.7412,
+        312.9032,
+        313.9908
+      ]
+    },
+    {
+      "backlog": "200 tickets (1000 changes), 3 terminals",
+      "mode": "retry kicked on reconnect",
+      "samples": [
+        493.0324,
+        526.9018,
+        553.8545,
+        457.9129,
+        474.2231
+      ]
+    }
+  ]
+}

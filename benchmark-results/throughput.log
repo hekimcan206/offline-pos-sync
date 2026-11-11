@@ -1,0 +1,10 @@
+environment: Microsoft Windows 10.0.26200; X64; 16 logical CPUs; .NET 10.0.12; host load: 5 running containers
+
+## throughput
+| scenario | changes | push median (changes/s) | push min-max | pull median (changes/s) | pull min-max |
+|---|---:|---:|---:|---:|---:|
+| 1 terminal | 1000 | 5231 | 4905-6598 | 12536 | 10771-20123 |
+| 4 terminals, 4 stores | 4000 | 18007 | 16451-20694 | 57045 | 45236-57142 |
+| 4 terminals, 1 store (contended) | 4000 | 7051 | 4458-7364 | 22848 | 14975-26962 |
+| 16 terminals, 16 stores | 16000 | 26999 | 18002-29487 | 65284 | 52660-87797 |
+EXIT 0
